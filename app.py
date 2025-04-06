@@ -23,7 +23,7 @@ except Exception as e:
 
 # LLM preprocessing function
 def llm_shorten_query(query):
-    prompt = "I want to search my vector database with the query you will recieve, your task is to just make it shorter (maximum 6-8 words) only returning job required skills (comma seperated) in the same order it comes in the query. Query: "
+    prompt = "I want to search my vector database with the query you will recieve, your task is to just make it shorter (maximum 6-8 words) only returning technical skills (comma seperated), and job level in the same order it comes in the query. Query: "
     try:
         response = model.generate_content(prompt + query)
         return response.text.strip()
