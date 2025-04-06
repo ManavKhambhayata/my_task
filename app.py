@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -6,45 +5,43 @@ from sentence_transformers import SentenceTransformer
 import faiss
 import google.generativeai as genai
 import re
+import os
 
 # Configure Gemini API
-API_KEY = "AIzaSyBxFG2RWw6yBa2_CIqTCrEXVfyMWfwBbZo"
+API_KEY = st.secrets.get("GEMINI_API_KEY", "AIzaSyBxFG2RWw6yBa2_CIqTCrEXVfyMWfwBbZo")
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')  
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-# Load preprocessed data and FAISS index
-df = pd.read_csv("shl_catalog_with_summaries.csv")
-index = faiss.read_index("shl_assessments_index.faiss")
-embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
- 
-# LLM preprocessing function for query
+# Load data and index
+try:
+    df = pd.read_csv("shl_catalog_with_summaries.csv")
+    index = faiss.read_index("shl_assessments_index.faiss")
+    embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+    st.write("Models loaded successfully!")
+except Exception as e:
+    st.error(f"Failed to load models: {e}")
+    st.stop()
+
+# LLM preprocessing function
 def llm_shorten_query(query):
-    prompt = "Shorten the given line (or word, dont do anything if its already short) , retaining the key skills, test type, and duration preferences, in minimal words. Line: "
+    prompt = "Shorten the given line (or word, dont do anything if its already short), retaining the key skills, test type, and duration preferences, in minimal words. Line: "
     try:
         response = model.generate_content(prompt + query)
         return response.text.strip()
     except Exception as e:
         st.error(f"Query LLM error: {e}")
-        return query  # Fallback to raw query
+        return query
 
 # Retrieval function
 def retrieve_assessments(query, k=10, max_duration=None):
     query_lower = query.lower()
     wants_flexible = any(x in query_lower for x in ["untimed", "variable", "flexible"])
-    
-    # LLM preprocess query
     processed_query = llm_shorten_query(query)
-    
-    # Embed query
     query_embedding = embedding_model.encode([processed_query], show_progress_bar=False)[0]
     query_embedding = np.array([query_embedding], dtype='float32')
-    
-    # Search FAISS
     distances, indices = index.search(query_embedding, k * 2)
     results = df.iloc[indices[0]].copy()
     results["similarity_score"] = 1 - distances[0] / 2
-    
-    # Filter by duration
     if max_duration is not None or wants_flexible:
         filtered = []
         for _, row in results.iterrows():
@@ -56,8 +53,6 @@ def retrieve_assessments(query, k=10, max_duration=None):
             elif isinstance(duration, float) and max_duration is not None and duration <= max_duration:
                 filtered.append(row)
         results = pd.DataFrame(filtered) if filtered else results
-    
-    # Rename columns for SHL spec
     results = results.rename(columns={"Pre-packaged Job Solutions": "Assessment Name", 
                                       "Assessment Length": "Duration"})
     return results[["Assessment Name", "URL", "Remote Testing (y/n)", 
@@ -65,8 +60,7 @@ def retrieve_assessments(query, k=10, max_duration=None):
 
 # Streamlit UI
 st.title("SHL Assessment Recommendation Engine")
-st.write("Enter a query to find relevant assessments (e.g., 'Java developers, 40 mins').")
-
+st.write("Enter a query (e.g., 'Java developers, 40 mins').")
 query = st.text_input("Your Query", "")
 if st.button("Get Recommendations"):
     if query:
