@@ -5,7 +5,6 @@ from sentence_transformers import SentenceTransformer
 import faiss
 import google.generativeai as genai
 import re
-import os
 
 # Configure Gemini API
 API_KEY = st.secrets.get("GEMINI_API_KEY", "AIzaSyBxFG2RWw6yBa2_CIqTCrEXVfyMWfwBbZo")
