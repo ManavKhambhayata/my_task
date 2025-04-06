@@ -23,7 +23,7 @@ except Exception as e:
 
 # LLM preprocessing function
 def llm_shorten_query(query):
-    prompt = "I want to search my vector database with the query you will recieve, your task is to preprocess and just make it shorter while retaining job required skills in the same way it comes in the query. For example : for the Query "Looking to hire mid-level professionals who are proficient in Python, SQL and Java Script. Need an assessment package that can test all skills with max duration of 60 minutes.", You would return " Python, SQL and Java Script. ", now do fir this Query: "
+    prompt = "I want to search my vector database with the query you will recieve, your task is to preprocess and just make it shorter while retaining job required skills in the same way it comes in the query. For example : for the Query : Looking to hire mid-level professionals who are proficient in Python, SQL and Java Script. Need an assessment package that can test all skills with max duration of 60 minutes., You would return : Python, SQL and Java Script. (something like this) , now do fir this Query: "
     try:
         response = model.generate_content(prompt + query)
         return response.text.strip()
