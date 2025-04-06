@@ -23,7 +23,7 @@ except Exception as e:
 
 # LLM preprocessing function
 def llm_shorten_query(query):
-    prompt = "Shorten the given line (or word, dont do anything if its already short), retaining the key skills, test type, and duration preferences, in minimal words. Line: "
+    prompt = "Shorten the given line , retaining the key skills, test type, and duration preferences, in minimal words. Line: "
     try:
         response = model.generate_content(prompt + query)
         return response.text.strip()
